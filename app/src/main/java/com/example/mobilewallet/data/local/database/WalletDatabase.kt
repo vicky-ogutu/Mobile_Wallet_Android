@@ -1,13 +1,13 @@
-package com.example.mobilewallet.local.database
+package com.example.mobilewallet.data.local.database
 
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import android.content.Context
 import androidx.room.TypeConverters
-import com.example.mobilewallet.local.Dao.LocalTransactionDao
-import com.example.mobilewallet.local.coverter.DateConverter
-import com.example.mobilewallet.local.entity.LocalTransaction
+import com.example.mobilewallet.data.local.Dao.LocalTransactionDao
+import com.example.mobilewallet.data.local.coverter.DateConverter
+import com.example.mobilewallet.data.local.entity.LocalTransaction
 
 
 @Database(

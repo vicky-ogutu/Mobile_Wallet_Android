@@ -1,4 +1,4 @@
-package com.example.mobilewallet.local.coverter
+package com.example.mobilewallet.data.local.coverter
 
 import androidx.room.TypeConverter
 import java.util.Date

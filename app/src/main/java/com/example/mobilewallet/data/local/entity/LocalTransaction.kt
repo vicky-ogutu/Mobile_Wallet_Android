@@ -1,4 +1,4 @@
-package com.example.mobilewallet.local.entity
+package com.example.mobilewallet.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

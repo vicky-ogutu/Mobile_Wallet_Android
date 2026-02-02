@@ -1,11 +1,11 @@
-package com.example.mobilewallet.local.Dao
+package com.example.mobilewallet.data.local.Dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
-import com.example.mobilewallet.local.entity.LocalTransaction
-import com.example.mobilewallet.local.entity.SyncStatus
+import com.example.mobilewallet.data.local.entity.LocalTransaction
+import com.example.mobilewallet.data.local.entity.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
