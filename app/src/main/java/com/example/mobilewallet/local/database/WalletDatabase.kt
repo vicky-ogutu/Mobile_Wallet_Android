@@ -1,10 +1,12 @@
-package com.example.mobilewallet.database
+package com.example.mobilewallet.local.database
 
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import android.content.Context
+import androidx.room.TypeConverters
 import com.example.mobilewallet.local.Dao.LocalTransactionDao
+import com.example.mobilewallet.local.coverter.DateConverter
 import com.example.mobilewallet.local.entity.LocalTransaction
 
 
@@ -13,6 +15,7 @@ import com.example.mobilewallet.local.entity.LocalTransaction
     version = 1,
     exportSchema = false
 )
+@TypeConverters(DateConverter::class)
 abstract class WalletDatabase : RoomDatabase() {
     abstract fun localTransactionDao(): LocalTransactionDao
 
