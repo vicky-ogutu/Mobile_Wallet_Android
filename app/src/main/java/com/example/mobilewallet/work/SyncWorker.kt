@@ -36,10 +36,11 @@ class SyncWorker @AssistedInject constructor(
                     repository.customerId.collect { customerId ->
                         customerId?.let {
                             val request = SendMoneyRequest(
-                                customerId = it,
+
                                 accountFrom = transaction.accountFrom,
                                 accountTo = transaction.accountTo,
-                                amount = transaction.amount
+                                amount = transaction.amount,
+                                clientTransactionId = transaction.clientTransactionId
                             )
 
                             val result = repository.sendMoneyRemote(request)

@@ -12,7 +12,6 @@ import com.example.mobilewallet.models.Transaction
 import com.example.mobilewallet.remote.api.WalletApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,7 +27,6 @@ class WalletRepository @Inject constructor(
         return try {
             val response = api.login(loginRequest)
             if (response.isSuccessful && response.body() == "OK") {
-                // Get customer details and account
                 val customers = api.getCustomers()
                 val customer = customers.find { it.customerId == loginRequest.customerId }
                 val accounts = api.getAccounts()
@@ -57,7 +55,6 @@ class WalletRepository @Inject constructor(
         }
     }
 
-    // FIXED: Correct method name for getTransactions
     suspend fun getTransactions(customerId: String): Result<List<Transaction>> {
         return try {
             val transactions = api.getLast100Transactions(BalanceRequest(customerId))
@@ -67,18 +64,17 @@ class WalletRepository @Inject constructor(
         }
     }
 
-    // FIXED: Correct method name for sendMoney with three parameters
     suspend fun sendMoney(fromAccount: String, toAccount: String, amount: Double): Result<String> {
         return try {
             val request = SendMoneyRequest(
-                fromAccount = fromAccount,
-                toAccount = toAccount,
-                amount = amount
+                accountFrom = fromAccount,
+                accountTo = toAccount,
+                amount = amount,
+                clientTransactionId = "ClientID"
             )
 
             val response = api.sendMoney(request)
             if (response.isSuccessful) {
-                // Check if response body contains success message
                 val responseBody = response.body()
                 val isSuccess = when (responseBody) {
                     is String -> responseBody.contains("success", ignoreCase = true) || responseBody == "OK"
@@ -96,14 +92,13 @@ class WalletRepository @Inject constructor(
         } catch (e: Exception) {
             // On network failure, queue the transaction locally
             val localTransaction = LocalTransaction(
-                id = UUID.randomUUID().toString(),
-                fromAccount = fromAccount,
-                toAccount = toAccount,
+                clientTransactionId = UUID.randomUUID().toString(),
+                accountFrom = fromAccount,
+                accountTo = toAccount,
                 amount = amount,
-                createdAt = System.currentTimeMillis(),
+                
                 syncStatus = SyncStatus.QUEUED,
                 attemptCount = 0,
-                lastAttemptAt = null
             )
 
             localTransactionDao.insert(localTransaction)
@@ -112,7 +107,6 @@ class WalletRepository @Inject constructor(
         }
     }
 
-    // Alias for backward compatibility (keeps existing code working)
     suspend fun getLast100Transactions(customerId: String): Result<List<Transaction>> {
         return getTransactions(customerId)
     }
@@ -130,9 +124,8 @@ class WalletRepository @Inject constructor(
         }
     }
 
-    // Helper methods to get current customer info
+    // Helper methods
     suspend fun getCurrentCustomerId(): String? {
-        // Using the flow and getting the first value
         return try {
             preferencesManager.customerId.first()
         } catch (e: Exception) {
@@ -141,7 +134,6 @@ class WalletRepository @Inject constructor(
     }
 
     suspend fun getCurrentCustomerAccount(): String? {
-        // Using the flow and getting the first value
         return try {
             preferencesManager.customerAccount.first()
         } catch (e: Exception) {
@@ -171,18 +163,16 @@ class WalletRepository @Inject constructor(
         transaction?.let {
             it.syncStatus = SyncStatus.QUEUED
             it.attemptCount += 1
-            it.lastAttemptAt = System.currentTimeMillis()
+            
             localTransactionDao.update(it)
         }
         return transaction
     }
 
-    // Session management
     suspend fun logout() {
         preferencesManager.clearLogin()
     }
 
-    // Customer info - using flows instead of suspend functions
     suspend fun getCurrentCustomer(): Customer? {
         return try {
             preferencesManager.customer.first()
@@ -191,9 +181,10 @@ class WalletRepository @Inject constructor(
         }
     }
 
-    // Flow properties
+    // Flow properties - KEEP THEM AS FLOW, NOT STATEFLOW
     val isLoggedIn: Flow<Boolean> = preferencesManager.isLoggedIn
     val customer: Flow<Customer?> = preferencesManager.customer
+    val customerId: Flow<String?> = preferencesManager.customerId
     val customerName: Flow<String?> = preferencesManager.customerName
     val customerEmail: Flow<String?> = preferencesManager.customerEmail
     val customerAccount: Flow<String?> = preferencesManager.customerAccount

@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme for API level 33+ -->
+    <style name="Theme.Wallet" parent="android:Theme.Material.Light.NoActionBar">
 
-    <style name="Theme.MobileWallet" parent="android:Theme.Material.Light.NoActionBar" />
+        <item name="android:statusBarColor">@color/purple_200</item>
+        <item name="android:navigationBarColor">@color/purple_200</item>
+    </style>
+
+    <!-- Base application theme for API level 23-32 -->
+    <style name="Theme.Wallet.NoActionBar" parent="Theme.Wallet">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
 </resources>

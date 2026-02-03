@@ -4,13 +4,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mobilewallet.presentation.viewmodel.HomeViewModel
+import com.example.mobilewallet.presentation.viewmodel.scree.ProfileScreen
+import com.example.mobilewallet.presentation.viewmodel.screen.BalanceScreen
 import com.example.mobilewallet.presentation.viewmodel.screen.HomeScreen
+import com.example.mobilewallet.presentation.viewmodel.screen.LocalTransactionsScreen
 import com.example.mobilewallet.presentation.viewmodel.screen.LoginScreen
+import com.example.mobilewallet.presentation.viewmodel.screen.SendMoneyScreen
+import com.example.mobilewallet.presentation.viewmodel.screen.StatementScreen
 
 
 @Composable
