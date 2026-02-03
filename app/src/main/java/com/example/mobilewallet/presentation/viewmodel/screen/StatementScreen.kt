@@ -6,16 +6,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mobilewallet.models.Transaction
-import com.example.mobilewallet.presentation.viewmodel.StatementUiState
+import com.example.mobilewallet.presentation.ui.StatementUiState
 import com.example.mobilewallet.presentation.viewmodel.StatementViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -28,99 +26,209 @@ fun StatementScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // Reset state when entering screen
+    DisposableEffect(Unit) {
+        viewModel.resetState()
+        onDispose {
+            // Optional cleanup
+        }
+    }
+
+    // Load transactions on first launch
     LaunchedEffect(Unit) {
-        viewModel.loadTransactions("CUST1001") // Get from preferences
+        viewModel.loadTransactions("CUST1001") // In real app, get from preferences
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Statement") },
+                title = { Text("Transaction Statement") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        viewModel.resetState()
+                        onBack()
+                    }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { viewModel.loadTransactions("CUST1001") },
+                        enabled = uiState !is StatementUiState.Loading
+                    ) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Refresh",
+                            tint = if (uiState is StatementUiState.Loading) {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
+                        )
                     }
                 }
             )
         }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
             when (uiState) {
-                is StatementViewModel.StatementUiState.Loading -> {
-                    Box(
+                is StatementUiState.Loading -> {
+                    Column(
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Loading transactions...")
                     }
                 }
-                is StatementViewModel.StatementUiState.Success -> {
-                    val transactions = (uiState as StatementViewModel.StatementUiState.Success).transactions
+
+                is StatementUiState.Success -> {
+                    val transactions = (uiState as StatementUiState.Success).transactions
 
                     if (transactions.isEmpty()) {
-                        Box(
+                        Column(
                             modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("No transactions found")
+                            Icon(
+                                Icons.Default.History,
+                                contentDescription = "No transactions",
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                "No transactions found",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
                         }
                     } else {
-                        LazyColumn(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(1.dp)
-                        ) {
-                            items(transactions) { transaction ->
-                                TransactionItem(transaction = transaction)
-                            }
-                        }
-
-                        // Total summary
-                        val total = transactions.sumOf { it.amount }
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            elevation = CardDefaults.cardElevation(4.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(vertical = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(1.dp)
                             ) {
-                                Text(
-                                    text = "Total Amount:",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "$${String.format("%.2f", total)}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (total >= 0) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.error
-                                )
+                                items(transactions) { transaction ->
+                                    TransactionItem(transaction = transaction)
+                                }
+                            }
+
+                            // Total summary
+                            val total = transactions.sumOf { it.amount }
+                            val creditTotal = transactions
+                                .filter { it.isCredit }
+                                .sumOf { it.amount }
+                            val debitTotal = transactions
+                                .filter { !it.isCredit }
+                                .sumOf { it.amount }
+
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                elevation = CardDefaults.cardElevation(4.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "Total Credits:",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Text(
+                                            text = "+$${String.format("%.2f", creditTotal)}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "Total Debits:",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Text(
+                                            text = "-$${String.format("%.2f", debitTotal)}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Divider()
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "Net Balance:",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = "$${String.format("%.2f", total)}",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (total >= 0) MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
-                is StatementViewModel.StatementUiState.Error -> {
-                    Box(
+
+                is StatementUiState.Error -> {
+                    Column(
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = (uiState as StatementViewModel.StatementUiState.Error).message,
-                            color = MaterialTheme.colorScheme.error
+                        Icon(
+                            Icons.Default.Error,
+                            contentDescription = "Error",
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.error
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = (uiState as StatementUiState.Error).message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { viewModel.loadTransactions("CUST1001") }
+                        ) {
+                            Text("Retry")
+                        }
                     }
                 }
 
-                is StatementUiState.Error -> TODO()
-                StatementUiState.Loading -> TODO()
-                is StatementUiState.Success -> TODO()
+                StatementUiState.Idle -> {
+                    // Initial state - nothing to show
+                }
             }
         }
     }
@@ -139,15 +247,26 @@ fun TransactionItem(transaction: Transaction) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = transaction.transactionType,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+
+//                if (transaction.description.isNotBlank()) {
+//                    Text(
+//                        text = transaction.description,
+//                        style = MaterialTheme.typography.bodySmall,
+//                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+//                    )
+//                }
+
                 Text(
                     text = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
                         .format(transaction.createdAt),
-                    style = MaterialTheme.typography.labelSmall
-                )
-                Text(
-                    text = transaction.transactionType,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
             }
 

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mobilewallet.data.local.repository.WalletRepository
 import com.example.mobilewallet.models.LoginRequest
+import com.example.mobilewallet.presentation.ui.LoginUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,11 +28,15 @@ class LoginViewModel @Inject constructor(
 
         _uiState.value = LoginUiState.Loading
         viewModelScope.launch {
-            val result = repository.login(LoginRequest(customerId, pin))
-            _uiState.value = if (result.isSuccess) {
-                LoginUiState.Success
-            } else {
-                LoginUiState.Error(result.exceptionOrNull()?.message ?: "Login failed")
+            try {
+                val result = repository.login(LoginRequest(customerId, pin))
+                _uiState.value = if (result.isSuccess) {
+                    LoginUiState.Success
+                } else {
+                    LoginUiState.Error(result.exceptionOrNull()?.message ?: "Login failed")
+                }
+            } catch (e: Exception) {
+                _uiState.value = LoginUiState.Error(e.message ?: "Unknown error")
             }
         }
     }
@@ -39,11 +44,4 @@ class LoginViewModel @Inject constructor(
     fun resetState() {
         _uiState.value = LoginUiState.Idle
     }
-}
-
-sealed class LoginUiState {
-    object Idle : LoginUiState()
-    object Loading : LoginUiState()
-    object Success : LoginUiState()
-    data class Error(val message: String) : LoginUiState()
 }

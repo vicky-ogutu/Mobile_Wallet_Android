@@ -10,7 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.mobilewallet.presentation.ui.BalanceUiState
 import com.example.mobilewallet.presentation.viewmodel.BalanceViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -25,16 +26,21 @@ fun BalanceScreen(
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        // Get customer ID from preferences or pass it
-        // For now, we'll use a placeholder
         viewModel.getBalance("CUST1001")
         showDialog = true
+    }
+
+    // Reset state when leaving screen
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.resetState()
+        }
     }
 
     if (showDialog) {
         Dialog(onDismissRequest = {
             coroutineScope.launch {
-                delay(300) // Small delay for smooth transition
+                delay(300)
                 onBack()
             }
         }) {
@@ -69,25 +75,27 @@ fun BalanceScreen(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     when (uiState) {
-                        is BalanceViewModel.BalanceUiState.Loading -> {
+                        is BalanceUiState.Loading -> {
                             CircularProgressIndicator()
                         }
-                        is BalanceViewModel.BalanceUiState.Success -> {
-                            val balance = (uiState as BalanceViewModel.BalanceUiState.Success).balance
+                        is BalanceUiState.Error -> {
                             Text(
-                                text = "$${String.format("%.2f", balance)}",
+                                text = (uiState as BalanceUiState.Error).message,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        is BalanceUiState.Success -> {
+                            Text(
+                                text = "$${String.format("%.2f", (uiState as BalanceUiState.Success).balance)}",
                                 style = MaterialTheme.typography.displayMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
-                        is BalanceViewModel.BalanceUiState.Error -> {
-                            Text(
-                                text = (uiState as BalanceViewModel.BalanceUiState.Error).message,
-                                color = MaterialTheme.colorScheme.error
-                            )
+                        else -> {
+                            // Idle state - show nothing or a placeholder
+                            Text("Ready to fetch balance...")
                         }
-                        else -> {}
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))

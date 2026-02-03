@@ -18,6 +18,8 @@ import com.example.mobilewallet.data.local.entity.SyncStatus
 import com.example.mobilewallet.presentation.viewmodel.LocalTransactionsViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.hilt.navigation.compose.hiltViewModel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

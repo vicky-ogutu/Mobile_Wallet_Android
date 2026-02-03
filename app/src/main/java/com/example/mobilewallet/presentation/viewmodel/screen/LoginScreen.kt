@@ -1,4 +1,5 @@
 package com.example.mobilewallet.presentation.viewmodel.screen
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -11,8 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.mobilewallet.presentation.ui.LoginUiState
 import com.example.mobilewallet.presentation.viewmodel.LoginViewModel
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,8 +26,17 @@ fun LoginScreen(
     var pin by remember { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsState()
 
+    // Reset state when entering screen
+    DisposableEffect(Unit) {
+        viewModel.resetState()
+        onDispose {
+
+        }
+    }
+
+    // Handle success state
     LaunchedEffect(uiState) {
-        if (uiState is LoginViewModel.LoginUiState.Success) {
+        if (uiState is LoginUiState.Success) {
             onLoginSuccess()
             viewModel.resetState()
         }
@@ -72,22 +83,25 @@ fun LoginScreen(
         Button(
             onClick = { viewModel.login(customerId, pin) },
             modifier = Modifier.fillMaxWidth(),
-            enabled = uiState !is LoginViewModel.LoginUiState.Loading
+            enabled = uiState !is LoginUiState.Loading
         ) {
-            if (uiState is LoginViewModel.LoginUiState.Loading) {
+            if (uiState is LoginUiState.Loading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Logging in...")
             } else {
                 Text("Login")
             }
         }
 
-        if (uiState is LoginViewModel.LoginUiState.Error) {
+        if (uiState is LoginUiState.Error) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = (uiState as LoginViewModel.LoginUiState.Error).message,
+                text = (uiState as LoginUiState.Error).message,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )

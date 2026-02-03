@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mobilewallet.presentation.viewmodel.HomeViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -22,7 +23,7 @@ fun ProfileScreen(
     val customerName by viewModel.customerName.collectAsState(initial = null)
     val customerEmail by viewModel.customerEmail.collectAsState(initial = null)
     val customerAccount by viewModel.customerAccount.collectAsState(initial = null)
-    val customerId by viewModel.customerId.collectAsState(initial = null)
+    //val customerId by viewModel.customerId.collectAsState(initial = null)
 
     Scaffold(
         topBar = {
@@ -49,11 +50,11 @@ fun ProfileScreen(
                 value = customerName ?: "N/A"
             )
 
-            ProfileItem(
-                icon = Icons.Default.Badge,
-                label = "Customer ID",
-                value = customerId ?: "N/A"
-            )
+//            ProfileItem(
+//                icon = Icons.Default.Badge,
+//                label = "Customer ID",
+//                value = customerId ?: "N/A"
+//            )
 
             ProfileItem(
                 icon = Icons.Default.AccountBalance,
